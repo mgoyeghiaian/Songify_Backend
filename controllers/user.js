@@ -6,23 +6,28 @@ const jwt = require("jsonwebtoken");
 // Signup User
 const signup_user = asyncHandler(async (req, res) => {
   const { username, password, email } = req.body;
+
   if (!username || !password || !email) {
     res.status(400);
-    throw new Error("Please provide all fields");
+    throw new Error('Please provide all fields');
   }
 
   // Check if user already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
-    throw new Error("Email already exists");
+    throw new Error('Email already exists');
   }
+
+  // Hash the password
+  const salt = await bcrypt.genSalt();
+  const hashedPassword = await bcrypt.hash(password, salt);
 
   // Create the user
   const user = await User.create({
     username,
     email,
-    password,
+    password: hashedPassword,
     likedSongs: [], // Initialize likedSongs array
   });
 
@@ -35,7 +40,7 @@ const signup_user = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error("Failed to create user");
+    throw new Error('Failed to create user');
   }
 });
 
@@ -43,7 +48,8 @@ const signup_user = asyncHandler(async (req, res) => {
 const login_user = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-
+  console.log('User:', user); // Add this line
+  console.log('Plain Text Password:', password); // Add this line
   if (user) {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
@@ -63,7 +69,6 @@ const login_user = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 });
-
 // Save Song to User's Liked Songs
 const save_song = asyncHandler(async (req, res) => {
   const { songData } = req.body; // Assuming songData is the object containing song information
@@ -83,8 +88,6 @@ const save_song = asyncHandler(async (req, res) => {
 // Delete Song from User's Liked Songs
 const delete_song = asyncHandler(async (req, res) => {
   const { songId } = req.params;
-
-  // Extract the user ID from the token in the request headers
   const token = req.headers.authorization;
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   const userId = decoded.id;
@@ -95,8 +98,6 @@ const delete_song = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("User not found");
   }
-
-  // Find the index of the song in the likedSongs array
   const songIndex = user.likedSongs.findIndex((song) => song.key === songId);
 
   if (songIndex === -1) {
@@ -104,7 +105,6 @@ const delete_song = asyncHandler(async (req, res) => {
     throw new Error("Song not found in liked songs");
   }
 
-  // Remove the song from the likedSongs array
   user.likedSongs.splice(songIndex, 1);
 
   await user.save();
@@ -136,12 +136,7 @@ const generateToken = (id) => {
   });
 };
 
-// Generate password reset token
-const generateResetToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
-};
+
 
 module.exports = {
   signup_user,

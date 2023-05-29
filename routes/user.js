@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { login_user, signup_user, save_song, delete_song, get_liked_songs } = require("../controllers/user");
-const { protect } = require("../middleware/user");
-const passport = require('passport');
+// const { protect } = require("../middleware/user");
+// const passport = require('passport');
 
 // Google Login
 // router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
