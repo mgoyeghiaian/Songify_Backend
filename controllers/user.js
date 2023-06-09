@@ -9,14 +9,14 @@ const signup_user = asyncHandler(async (req, res) => {
 
   if (!username || !password || !email) {
     res.status(400);
-    throw new Error('Please provide all fields');
+    throw new Error("Please provide all fields");
   }
 
   // Check if user already exists
   const userExists = await User.findOne({ email });
   if (userExists) {
     res.status(400);
-    throw new Error('Email already exists');
+    throw new Error("Email already exists");
   }
 
   // Hash the password
@@ -40,7 +40,7 @@ const signup_user = asyncHandler(async (req, res) => {
     });
   } else {
     res.status(400);
-    throw new Error('Failed to create user');
+    throw new Error("Failed to create user");
   }
 });
 
@@ -48,8 +48,8 @@ const signup_user = asyncHandler(async (req, res) => {
 const login_user = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  console.log('User:', user); // Add this line
-  console.log('Plain Text Password:', password); // Add this line
+  console.log("User:", user); // Add this line
+  console.log("Plain Text Password:", password); // Add this line
   if (user) {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
@@ -69,6 +69,55 @@ const login_user = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 });
+
+// Send Verification Code
+const sendVerificationCode = asyncHandler(async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  // Check if user exists
+  const user = await User.findOne({ phoneNumber });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  // Generate verification code
+  const verificationCode = generateVerificationCode();
+
+  // Save the verification code to the user
+  user.verificationCode = verificationCode;
+  await user.save();
+
+  // Send verification code to the user's phone number (implementation depends on your chosen SMS service or library)
+
+  res.json({ message: "Verification code sent successfully" });
+});
+
+// Verify Code
+const verifyCode = asyncHandler(async (req, res) => {
+  const { phoneNumber, code } = req.body;
+
+  // Check if user exists
+  const user = await User.findOne({ phoneNumber });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  // Check if the provided code matches the stored verification code
+  if (code !== user.verificationCode) {
+    res.status(400);
+    throw new Error("Invalid verification code");
+  }
+
+  // Update the user's verification status
+  user.isVerified = true;
+  user.verificationCode = "";
+  await user.save();
+
+  res.json({ message: "Verification successful" });
+});
+
 // Save Song to User's Liked Songs
 const save_song = asyncHandler(async (req, res) => {
   const { songData } = req.body; // Assuming songData is the object containing song information
@@ -119,7 +168,7 @@ const get_liked_songs = asyncHandler(async (req, res) => {
   const userId = decoded.id;
 
   // Find the user by ID and retrieve their likedSongs
-  const user = await User.findById(userId).select('likedSongs');
+  const user = await User.findById(userId).select("likedSongs");
 
   if (!user) {
     res.status(404);
@@ -136,11 +185,18 @@ const generateToken = (id) => {
   });
 };
 
-
+// Generate Verification Code
+const generateVerificationCode = () => {
+  // Generate a random 6-digit code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  return code;
+};
 
 module.exports = {
   signup_user,
   login_user,
+  sendVerificationCode,
+  verifyCode,
   save_song,
   delete_song,
   get_liked_songs,

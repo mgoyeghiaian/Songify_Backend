@@ -2,10 +2,9 @@ const mongoose = require("mongoose");
 const bcrypt = require('bcrypt')
 
 const UserSchema = new mongoose.Schema({
-
   username: {
     type: String,
-    required: [true, 'Please enter an Username'],
+    required: [true, 'Please enter a username'],
     lowercase: true,
   },
   email: {
@@ -14,18 +13,26 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
   },
-
   password: {
     type: String,
-    required: [true, 'Please enter an Password'],
+    required: [true, 'Please enter a password'],
   },
-
+  phoneNumber: {
+    type: String,
+    unique: true,
+  },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  verificationCode: {
+    type: String,
+  },
   likedSongs: {
     type: [Object],
   },
+});
 
-})
-
-const User = mongoose.model("user", UserSchema);
+const User = mongoose.model("User", UserSchema);
 
 module.exports = User;

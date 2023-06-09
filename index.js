@@ -6,6 +6,7 @@ const app = express();
 const UserRoute = require("./routes/user")
 const cors = require('cors');
 mongoose.set("strictQuery", true);
+require('dotenv').config();
 
 app.use(cors());
 
